@@ -5,12 +5,16 @@ import CardDetails from "../components/CardDetails";
 import MealItemList from "../components/MealItemList";
 import IconButton from "../components/IconButton";
 import { FavoritesContext } from "../store/context/favorites.context";
+import { useSelector, useDispatch } from "react-redux";
+import { addFavorite, removeFavorite } from "../store/redux/favorites";
 
 function MealDetailsScreen({ route, navigation }) {
-  const { ids, addFavorite, removeFavorite } = useContext(FavoritesContext);
+  // const { ids, addFavorite, removeFavorite } = useContext(FavoritesContext);
+  const favoriteMealIds = useSelector((state) => state.favoriteMeals.ids);
+  const dispatch = useDispatch();
   const { mealId } = route.params;
 
-  const isFavorite = ids.includes(mealId);
+  const isFavorite = favoriteMealIds.includes(mealId);
 
   const meal = MEALS.find((meal) => meal.id === mealId);
 
@@ -52,11 +56,12 @@ function MealDetailsScreen({ route, navigation }) {
   }, [mealId, navigation, isFavorite, changeFavoritesStatusHandler]);
 
   function changeFavoritesStatusHandler() {
-    const isFavorite = ids.find((id) => id === mealId);
     if (isFavorite) {
-      removeFavorite(mealId);
+      // removeFavorite(mealId);
+      dispatch(removeFavorite({ id: mealId }));
     } else {
-      addFavorite(mealId);
+      // addFavorite(mealId);
+      dispatch(addFavorite({ id: mealId }));
     }
   }
 
