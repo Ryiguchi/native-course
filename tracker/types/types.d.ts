@@ -14,5 +14,7 @@ declare global {
     description: string;
   }
 
+  type ExpenseInputData = Omit<Expense, 'id'>;
+
   interface ScreenComponent extends FC<> {}
 }

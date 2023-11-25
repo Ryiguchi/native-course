@@ -1,19 +1,34 @@
-import { FC, useContext, useLayoutEffect } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { FC, useContext, useLayoutEffect, useState } from 'react';
+import { StyleSheet, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useNavigation } from 'expo-router';
 import IconButton from '../components/UI/IconButton';
 import { GlobalStyles } from '../constants/styles';
-import Button, { Modes } from '../components/UI/Button';
 import { ExpensesContext } from '../store/expenses.context';
+import ExpenseForm from '../components/ManageExpense/ExpenseForm';
+import {
+  axiosDeleteExpense,
+  axiosUpdateExpense,
+  storeExpense,
+} from '../util/http';
+import LoadingOverlay from '../components/UI/LoadingOverlay';
+import { getErrorMessage } from '../util/error';
+import ErrorOverlay from '../components/UI/ErrorOverlay';
 
 const ManageExpensesScreen: FC = () => {
   const navigation = useNavigation();
-  const { deleteExpense, updateExpense, addExpense } =
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const { deleteExpense, updateExpense, addExpense, expenses } =
     useContext(ExpensesContext);
+
   const { expenseId } = useLocalSearchParams<{ expenseId?: string }>();
 
   const isEditing = !!expenseId;
+
+  const selectedExpense = expenses.find(expense => expense.id === expenseId);
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -21,45 +36,63 @@ const ManageExpensesScreen: FC = () => {
     });
   }, [isEditing, navigation]);
 
-  function deleteExpenseHandler() {
+  function confirmErrorHandler() {
+    setError(null);
+  }
+
+  async function deleteExpenseHandler() {
     if (!expenseId) return;
 
-    deleteExpense(expenseId);
-    navigation.goBack();
+    try {
+      setIsLoading(true);
+      await axiosDeleteExpense(expenseId);
+      deleteExpense(expenseId);
+      navigation.goBack();
+    } catch (error: any) {
+      setError(getErrorMessage(error));
+      setIsLoading(false);
+    }
   }
 
   function cancelHandler() {
     navigation.goBack();
   }
 
-  function confirmHandler() {
-    if (isEditing) {
-      updateExpense({
-        id: expenseId,
-        description: 'test',
-        amount: 19.99,
-        date: new Date('2023-11-24'),
-      });
-    } else {
-      addExpense({
-        description: 'test',
-        amount: 19.99,
-        date: new Date('2023-11-24'),
-      });
+  async function confirmHandler(expenseData: ExpenseInputData) {
+    setIsLoading(true);
+
+    try {
+      if (isEditing) {
+        await axiosUpdateExpense(expenseId, expenseData);
+        updateExpense(expenseId, expenseData);
+      } else {
+        const id = await storeExpense(expenseData);
+        addExpense({ ...expenseData, id });
+      }
+      navigation.goBack();
+    } catch (error: any) {
+      setError(getErrorMessage(error));
+      setIsLoading(false);
     }
-    navigation.goBack();
+  }
+
+  if (isLoading) {
+    return <LoadingOverlay />;
+  }
+
+  if (error) {
+    return <ErrorOverlay message={error} onConfirm={confirmErrorHandler} />;
   }
 
   return (
     <View style={styles.container}>
-      <View style={styles.buttonsContainer}>
-        <Button mode={Modes.FLAT} onPress={cancelHandler} style={styles.button}>
-          Cancel
-        </Button>
-        <Button onPress={confirmHandler} style={styles.button}>
-          {isEditing ? 'Update' : 'Add'}
-        </Button>
-      </View>
+      <ExpenseForm
+        onCancel={cancelHandler}
+        onSubmit={confirmHandler}
+        submitButtonLabel={isEditing ? 'Update' : 'Add'}
+        defaultValues={selectedExpense}
+      />
+
       {isEditing && (
         <View style={styles.deleteContainer}>
           <IconButton
@@ -81,17 +114,6 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 24,
     // backgroundColor: GlobalStyles.colors.primary700,
-  },
-
-  buttonsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  button: {
-    minWidth: 120,
-    marginHorizontal: 8,
   },
 
   deleteContainer: {

@@ -1,5 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import { GlyphMap, Icon } from '@expo/vector-icons/build/createIconSet';
 import { FC } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 

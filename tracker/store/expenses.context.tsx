@@ -1,19 +1,15 @@
 import { FC, ReactNode, createContext, useState } from 'react';
 import { DUMMY_EXPENSES } from '../components/Expenses/ExpensesOutput';
 
-type ExpensesContextType = {
-  expenses: Expense[];
-  addExpense: (expense: Omit<Expense, 'id'>) => void;
-  deleteExpense: (id: string) => void;
-  updateExpense: (expense: Expense) => void;
-};
-
 const initialState = {
   expenses: DUMMY_EXPENSES,
-  addExpense: (expense: Omit<Expense, 'id'>) => {},
+  addExpense: (expense: Expense) => {},
   deleteExpense: (id: string) => {},
-  updateExpense: (expense: Expense) => {},
+  updateExpense: (id: string, expense: ExpenseInputData) => {},
+  setFetchedExpenses: (expenses: Expense[]) => {},
 };
+
+type ExpensesContextType = typeof initialState;
 
 export const ExpensesContext = createContext<ExpensesContextType>(initialState);
 
@@ -24,18 +20,9 @@ interface ExpenseProviderProps {
 const ExpensesContextProvider: FC<ExpenseProviderProps> = ({ children }) => {
   const [expenses, setExpenses] = useState<Expense[]>(DUMMY_EXPENSES);
 
-  function addExpense(expense: Omit<Expense, 'id'>) {
-    const newExpense = {
-      ...expense,
-      id: Date.now().toString(),
-    };
-
+  function addExpense(expense: Expense) {
     setExpenses(currentExpenses => {
-      if (currentExpenses.length === 0) {
-        return [newExpense];
-      } else {
-        return [...currentExpenses, newExpense];
-      }
+      return [...currentExpenses, expense];
     });
   }
 
@@ -45,17 +32,27 @@ const ExpensesContextProvider: FC<ExpenseProviderProps> = ({ children }) => {
     );
   }
 
-  function updateExpense(updateExpense: Expense) {
-    const index = expenses.findIndex(
-      (expense: Expense) => expense.id === updateExpense.id
-    );
+  function updateExpense(id: string, updateExpense: ExpenseInputData) {
+    const index = expenses.findIndex((expense: Expense) => expense.id === id);
+
+    const expenseWithId = {
+      ...updateExpense,
+      id,
+    };
 
     setExpenses(currentExpenses => {
       const temp = [...currentExpenses];
-      temp.splice(index, 1, updateExpense);
+      temp.splice(index, 1, expenseWithId);
 
       return temp;
     });
+  }
+
+  function setFetchedExpenses(expenses: Expense[]) {
+    expenses.sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+    setExpenses(expenses);
   }
 
   const value = {
@@ -63,6 +60,7 @@ const ExpensesContextProvider: FC<ExpenseProviderProps> = ({ children }) => {
     addExpense,
     deleteExpense,
     updateExpense,
+    setFetchedExpenses,
   };
 
   return (
