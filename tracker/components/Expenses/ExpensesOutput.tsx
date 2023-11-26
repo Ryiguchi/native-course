@@ -53,6 +53,18 @@ export const DUMMY_EXPENSES = [
     amount: 219.99,
     date: new Date('2023-11-25'),
   },
+  {
+    id: 'e9',
+    description: 'A pair of shoes',
+    amount: 59.99,
+    date: new Date('2023-11-26'),
+  },
+  {
+    id: 'e10',
+    description: 'A pair of pants',
+    amount: 49.99,
+    date: new Date('2023-11-27'),
+  },
 ];
 
 interface ExpensesOutputProps {
