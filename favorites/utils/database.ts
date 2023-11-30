@@ -44,7 +44,7 @@ export function insertPlace(place: Place) {
           place.location.latitude,
           place.location.longitude,
         ],
-        (_, result) => resolve(result),
+        (_, result) => resolve(result.insertId),
         (_, error) => {
           reject(error);
           return false;

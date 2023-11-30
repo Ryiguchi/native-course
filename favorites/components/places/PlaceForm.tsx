@@ -9,6 +9,7 @@ import { router } from 'expo-router';
 import { Place } from '../../models/place';
 import { PlacesContext } from '../../store/places.context';
 import { insertPlace } from '../../utils/database';
+import { z } from 'zod';
 
 const PlaceForm: FC = () => {
   const {
@@ -41,8 +42,13 @@ const PlaceForm: FC = () => {
     );
 
     try {
-      await insertPlace(place);
+      const addedPlaceId = await insertPlace(place);
+
+      const validatedId = z.number().parse(addedPlaceId);
+
+      place.id = validatedId;
       addPlace(place);
+
       clearSelectedPlace();
       router.push('/');
     } catch (error) {
